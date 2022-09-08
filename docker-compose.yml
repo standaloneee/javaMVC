@@ -1,51 +1,73 @@
 version: "3.9"
 
 services:
-  database:
+  db:
+    volumes:
+      - ./pg_data:/var/lib/postgresql/data/pgdata
+    container_name: db
     image: postgres
     hostname: database
     restart: always
     environment:
-#      POSTGRES_PASSWORD: postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=postgres
+      - PGDATA= /var/lib/postgresql/data/pgdata
     ports:
       - "5432:5432"
+    expose:
+      - 5432
 
-  server:
+
+
+  eureka:
+    networks:
+      - default
+    environment:
+      - http://eureka:8080/eureka/
     container_name: eureka-server
     build:
       context: ./eureka-server
       dockerfile: Dockerfile
+    expose:
+      - 8080
     ports:
       - "8080:8080"
 
 
   client:
+    restart: always
+    container_name: eureka-client
     build:
      context: ./eureka-client
      dockerfile: Dockerfile
     environment:
-      - eureka.client.service-url.defaultZone = http://eureka:8080/eureka
-      - DB_URL=postgres
-      - DB_USER=postgres
-      - DB_PASSWORD=postgres
+      - http://eureka:8080/eureka/
+      - spring.datasource.url=jdbc:postgresql://db:5432/postgres
     depends_on:
-      - server
-    hostname: client
+      - eureka
+      - db
     ports:
       - "8081:8081"
+    links:
+      - db
 
   gateway:
+    networks:
+      - default
+    container_name: api-gateway
     depends_on:
-      - server
-    environment:
-      - eureka.client.service-url.defaultZone = http://eureka:8080/eureka
+      - eureka
     build: ./api-gateway
     hostname: gateway
-    links:
-      - client
+    expose:
+      - 8082
     ports:
       - "8082:8082"
+    environment:
+      - http://eureka:8080/eureka/
+    links:
+      - eureka
 
+volumes:
+  pgdata:
