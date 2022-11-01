@@ -8,7 +8,7 @@ Java 11
 
 JPA, JDBC, Hibernate, Spring Cloud Netflix, Spring Web, API Gateway, Mapstruct
 
-Postgre, luquibase
+Postgre, liquibase
 
 Docker, docker compose
 
